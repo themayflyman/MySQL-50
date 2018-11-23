@@ -503,6 +503,37 @@ insert into SC values('07' , '03' , 98);
 
 13. 按平均成绩从高到低显示所有学生的所有课程的成绩以及平均成绩
 
+    ```sql
+    SELECT Student.s_id, 
+           t1.s_score AS '01_score',
+           t2.s_score AS '02_score',
+           t3.s_score AS '03_score',
+    	   AVG(t4.s_score)
+    FROM Student
+    LEFT JOIN Score AS t1 ON Student.s_id = t1.s_id
+    AND t1.c_id = '01'
+    LEFT JOIN Score AS t2 ON Student.s_id = t2.s_id
+    AND t2.c_id = '02'
+    LEFT JOIN Score AS t3 ON Student.s_id = t3.s_id
+    AND t3.c_id = '03'
+    LEFT JOIN Score AS t4 ON Student.s_id = t4.s_id
+    GROUP BY Student.s_id
+    ORDER BY AVG(t4.s_score) DESC;
+    
+    +------+----------+----------+----------+-----------------+
+    | s_id | 01_score | 02_score | 03_score | AVG(t4.s_score) |
+    +------+----------+----------+----------+-----------------+
+    | 07   |     NULL |       89 |       98 |         93.5000 |
+    | 01   |       80 |       90 |       99 |         89.6667 |
+    | 05   |       76 |       87 |     NULL |         81.5000 |
+    | 03   |       80 |       80 |       80 |         80.0000 |
+    | 02   |       70 |       60 |       80 |         70.0000 |
+    | 04   |       50 |       30 |       20 |         33.3333 |
+    | 06   |       31 |     NULL |       34 |         32.5000 |
+    | 08   |     NULL |     NULL |     NULL |            NULL |
+    +------+----------+----------+----------+-----------------+
+    ```
+
 14. 查询各科成绩最高分、最低分和平均分： 以如下形式显示：课程 ID，课程 name，最高分，最低分，平均分，及格率，中等率，优良率，优秀率 及格为>=60，中等为：70-80，优良为：80-90，优秀为：>=90 要求输出课程号和选修人数，查询结果按人数降序排列，若人数相同，按课程号升序排列
 
 15. 按各科成绩进行排序，并显示排名， Score 重复时保留名次空缺 
