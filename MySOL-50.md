@@ -63,11 +63,7 @@ insert into Student values('04' , '李云' , '1990-08-06' , '男');
 insert into Student values('05' , '周梅' , '1991-12-01' , '女');
 insert into Student values('06' , '吴兰' , '1992-03-01' , '女');
 insert into Student values('07' , '郑竹' , '1989-07-01' , '女');
-insert into Student values('09' , '张三' , '2017-12-20' , '女');
-insert into Student values('10' , '李四' , '2017-12-25' , '女');
-insert into Student values('11' , '李四' , '2017-12-30' , '女');
-insert into Student values('12' , '赵六' , '2017-01-01' , '女');
-insert into Student values('13' , '孙七' , '2018-01-01' , '女');
+insert into Student values('08' , '王菊' , '1990-01-20' , '女');
 
 +------+--------+------------+-------+
 | s_id | s_name | s_birth    | s_sex |
