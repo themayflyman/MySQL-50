@@ -1,4 +1,4 @@
-# MySOL 50题
+# 	MySOL 50题
 
 ## 练习数据
 
@@ -416,14 +416,90 @@ insert into SC values('07' , '03' , 98);
 9. 查询和" 01 "号的同学学习的课程 完全相同的其他同学的信息
 
    ```sql
-   SELECT CId FROM SC WHERE SC.SId='01'
+   SELECT Student.*
+   FROM Student
+   WHERE s_id IN (SELECT s_id
+                  FROM Score
+                  GROUP BY s_id
+                  HAVING COUNT(s_id)=(SELECT COUNT(c_id)
+                                      FROM Score
+                                      WHERE s_id='01'))
+   AND s_id IN (SELECT s_id
+                FROM Score
+                WHERE c_id NOT IN (SELECT c_id
+                                   FROM Score
+                                   WHERE c_id NOT IN (SELECT c_id
+                                                      FROM Score
+                                                      WHERE s_id='01'))
+               GROUP BY s_id)
+   AND s_id!='01';
+   
+   +------+--------+------------+-------+
+   | s_id | s_name | s_birth    | s_sex |
+   +------+--------+------------+-------+
+   | 02   | 钱电   | 1990-12-21 | 男    |
+   | 03   | 孙风   | 1990-05-20 | 男    |
+   | 04   | 李云   | 1990-08-06 | 男    |
+   +------+--------+------------+-------+
    ```
 
 10. 查询没学过"张三"老师讲授的任一门课程的学生姓名
 
+    ```sql
+    SELECT s_name
+    FROM Student
+    WHERE s_id NOT IN (SELECT s_id
+                       FROM Score
+                       WHERE c_id IN (SELECT c_id
+                                      FROM Course
+                                      INNER JOIN Teacher
+                                      ON Course.t_id=Teacher.t_id
+                                      WHERE Teacher.t_name='张三'));
+                                      
+    +--------+
+    | s_name |
+    +--------+
+    | 吴兰   |
+    | 王菊   |
+    +--------+
+    ```
+
 11. 查询两门及其以上不及格课程的同学的学号，姓名及其平均成绩
 
+    ```sql
+    SELECT Student.s_id,Student.s_name,AVG(Score.s_score)
+    FROM Student
+    LEFT JOIN Score
+    ON Student.s_id=Score.s_id
+    WHERE Score.s_score<60
+    GROUP BY Score.s_id
+    HAVING COUNT(Score.s_score)>=2;
+    
+    +------+--------+--------------------+
+    | s_id | s_name | avg(Score.s_score) |
+    +------+--------+--------------------+
+    | 04   | 李云   |            33.3333 |
+    | 06   | 吴兰   |            32.5000 |
+    +------+--------+--------------------+
+    ```
+
 12. 检索" 01 "课程分数小于 60，按分数降序排列的学生信息
+
+    ```sql
+    SELECT Student.*,Score.s_score
+    FROM Student
+    INNER JOIN Score
+    ON Student.s_id=Score.s_id
+    WHERE Score.s_score<60 AND Score.c_id='01'
+    ORDER BY Score.s_score DESC;
+    
+    +------+--------+------------+-------+---------+
+    | s_id | s_name | s_birth    | s_sex | s_score |
+    +------+--------+------------+-------+---------+
+    | 04   | 李云   | 1990-08-06 | 男    |      50 |
+    | 06   | 吴兰   | 1992-03-01 | 女    |      31 |
+    +------+--------+------------+-------+---------+
+    ```
 
 13. 按平均成绩从高到低显示所有学生的所有课程的成绩以及平均成绩
 
