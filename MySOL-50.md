@@ -163,67 +163,65 @@ insert into SC values('07' , '03' , 98);
 1. 查询" 01 "课程比" 02 "课程成绩高的学生的信息及课程分数 
 
    ```sql
-   SELECT t3.SId,Student.*,t3.score1,t3.score2
-   FROM (SELECT t1.SId,t1.score AS score1,t2.score AS score2
-         FROM (SELECT SId,score FROM SC WHERE SC.CId='01') AS t1,
-              (SELECT SId,score FROM SC WHERE SC.CId='02') AS t2
-         WHERE t1.SId=t2.SId AND t1.score>t2.score) AS t3
+   SELECT t3.s_id,Student.*,t3.score1,t3.score2
+   FROM (SELECT t1.s_id,t1.s_score AS score1,t2.s_score AS score2
+         FROM (SELECT s_id,s_score FROM Score WHERE Score.c_id='01') AS t1,
+              (SELECT s_id,s_score FROM Score WHERE Score.c_id='02') AS t2
+         WHERE t1.s_id=t2.s_id AND t1.s_score>t2.s_score) AS t3
    INNER JOIN Student
-   ON t3.SId=Student.SId;
+   ON t3.s_id=Student.s_id;
    
-   +------+------+--------+---------------------+------+--------+--------+
-   | SId  | SId  | Sname  | Sage                | Ssex | score1 | score2 |
-   +------+------+--------+---------------------+------+--------+--------+
-   | 02   | 02   | 钱电   | 1990-12-21 00:00:00 | 男   |   70.0 |   60.0 |
-   | 04   | 04   | 李云   | 1990-08-06 00:00:00 | 男   |   50.0 |   30.0 |
-   +------+------+--------+---------------------+------+--------+--------+
+   +------+------+--------+------------+-------+--------+--------+
+   | s_id | s_id | s_name | s_birth    | s_sex | score1 | score2 |
+   +------+------+--------+------------+-------+--------+--------+
+   | 02   | 02   | 钱电   | 1990-12-21 | 男    |     70 |     60 |
+   | 04   | 04   | 李云   | 1990-08-06 | 男    |     50 |     30 |
+   +------+------+--------+------------+-------+--------+--------+
    ```
-
-
 
    1.1 查询同时存在" 01 "课程和" 02 "课程的情况 
 
    ``````sql
-   SELECT t3.SId,Student.*,t3.score1,t3.score2
-   FROM (SELECT t1.SId,t1.score AS score1,t2.score AS score2
-         FROM (SELECT SId,score FROM SC WHERE SC.CId='01') AS t1,
-              (SELECT SId,score FROM SC WHERE SC.CId='02') AS t2
-         WHERE t1.SId=t2.SId) AS t3
-   INNER JOIN Student
-   ON t3.SId=Student.SId;
+SELECT t3.s_id,Student.*,t3.score1,t3.score2
+FROM (SELECT t1.s_id,t1.s_score AS score1,t2.s_score AS score2
+      FROM (SELECT s_id,s_score FROM Score WHERE Score.c_id='01') AS t1,
+           (SELECT s_id,s_score FROM Score WHERE Score.c_id='02') AS t2
+      WHERE t1.s_id=t2.s_id) AS t3
+INNER JOIN Student
+ON t3.s_id=Student.s_id;
    
-   +------+------+--------+---------------------+------+--------+--------+
-   | SId  | SId  | Sname  | Sage                | Ssex | score1 | score2 |
-   +------+------+--------+---------------------+------+--------+--------+
-   | 01   | 01   | 赵雷   | 1990-01-01 00:00:00 | 男   |   80.0 |   90.0 |
-   | 02   | 02   | 钱电   | 1990-12-21 00:00:00 | 男   |   70.0 |   60.0 |
-   | 03   | 03   | 孙风   | 1990-05-20 00:00:00 | 男   |   80.0 |   80.0 |
-   | 04   | 04   | 李云   | 1990-08-06 00:00:00 | 男   |   50.0 |   30.0 |
-   | 05   | 05   | 周梅   | 1991-12-01 00:00:00 | 女   |   76.0 |   87.0 |
-   +------+------+--------+---------------------+------+--------+--------+
++------+------+--------+------------+-------+--------+--------+
+| s_id | s_id | s_name | s_birth    | s_sex | score1 | score2 |
++------+------+--------+------------+-------+--------+--------+
+| 01   | 01   | 赵雷   | 1990-01-01 | 男    |     80 |     90 |
+| 02   | 02   | 钱电   | 1990-12-21 | 男    |     70 |     60 |
+| 03   | 03   | 孙风   | 1990-05-20 | 男    |     80 |     80 |
+| 04   | 04   | 李云   | 1990-08-06 | 男    |     50 |     30 |
+| 05   | 05   | 周梅   | 1991-12-01 | 女    |     76 |     87 |
++------+------+--------+------------+-------+--------+--------+
    ``````
 
    1.2 查询存在" 01 "课程但可能不存在" 02 "课程的情况(不存在时显示为 null ) 
 
    ```sql
-   SELECT t3.SId,Student.*,t3.score1,t3.score2
-   FROM (SELECT t1.SId,t1.score AS score1,t2.score AS score2
-         FROM (SELECT SId,score FROM SC WHERE SC.CId='01') AS t1 
-               LEFT JOIN (SELECT SId,score FROM SC WHERE SC.CId='02') AS t2
-               ON t1.SId=t2.SId) AS t3
-   INNER JOIN Student
-   ON t3.SId=Student.SId;
+SELECT t3.s_id,Student.*,t3.score1,t3.score2
+FROM (SELECT t1.s_id,t1.s_score AS score1,t2.s_score AS score2
+      FROM (SELECT s_id,s_score FROM Score WHERE Score.c_id='01') AS t1 
+            LEFT JOIN (SELECT s_id,s_score FROM Score WHERE Score.c_id='02') AS t2
+            ON t1.s_id=t2.s_id) AS t3
+INNER JOIN Student
+ON t3.s_id=Student.s_id;
    
-   +------+------+--------+---------------------+------+--------+--------+
-   | SId  | SId  | Sname  | Sage                | Ssex | score1 | score2 |
-   +------+------+--------+---------------------+------+--------+--------+
-   | 01   | 01   | 赵雷   | 1990-01-01 00:00:00 | 男   |   80.0 |   90.0 |
-   | 02   | 02   | 钱电   | 1990-12-21 00:00:00 | 男   |   70.0 |   60.0 |
-   | 03   | 03   | 孙风   | 1990-05-20 00:00:00 | 男   |   80.0 |   80.0 |
-   | 04   | 04   | 李云   | 1990-08-06 00:00:00 | 男   |   50.0 |   30.0 |
-   | 05   | 05   | 周梅   | 1991-12-01 00:00:00 | 女   |   76.0 |   87.0 |
-   | 06   | 06   | 吴兰   | 1992-03-01 00:00:00 | 女   |   31.0 |   NULL |
-   +------+------+--------+---------------------+------+--------+--------+
++------+------+--------+------------+-------+--------+--------+
+| s_id | s_id | s_name | s_birth    | s_sex | score1 | score2 |
++------+------+--------+------------+-------+--------+--------+
+| 01   | 01   | 赵雷   | 1990-01-01 | 男    |     80 |     90 |
+| 02   | 02   | 钱电   | 1990-12-21 | 男    |     70 |     60 |
+| 03   | 03   | 孙风   | 1990-05-20 | 男    |     80 |     80 |
+| 04   | 04   | 李云   | 1990-08-06 | 男    |     50 |     30 |
+| 05   | 05   | 周梅   | 1991-12-01 | 女    |     76 |     87 |
+| 06   | 06   | 吴兰   | 1992-03-01 | 女    |     31 |   NULL |
++------+------+--------+------------+-------+--------+--------+
    ```
 
 
@@ -231,39 +229,39 @@ insert into SC values('07' , '03' , 98);
    1.3 查询不存在" 01 "课程但存在" 02 "课程的情况
 
    ```sql
-   SELECT Student.*, SC.score
-   FROM SC
-   INNER JOIN Student
-   ON Student.SId=SC.SId
-   WHERE SC.SId NOT IN (SELECT SId FROM SC WHERE SC.CId='01')
-   AND SC.CId='02';
+SELECT Student.*, Score.score
+FROM Score
+INNER JOIN Student
+ON Student.s_id=Score.s_id
+WHERE Score.s_id NOT IN (SELECT s_id FROM Score WHERE Score.c_id='01')
+AND Score.c_id='02';
    
-   +------+--------+---------------------+------+-------+
-   | SId  | Sname  | Sage                | Ssex | score |
-   +------+--------+---------------------+------+-------+
-   | 07   | 郑竹   | 1989-07-01 00:00:00 | 女   |  89.0 |
-   +------+--------+---------------------+------+-------+
++------+--------+------------+-------+---------+
+| s_id | s_name | s_birth    | s_sex | s_score |
++------+--------+------------+-------+---------+
+| 07   | 郑竹   | 1989-07-01 | 女    |      89 |
++------+--------+------------+-------+---------+
    ```
 
 2. 查询平均成绩大于等于 60 分的同学的学生编号和学生姓名和平均成绩
 
    ```sql
-   SELECT Student.Sname, t1.AvgScore
-   FROM (SELECT SId, AVG(score) AS AvgScore
-         FROM SC
-         GROUP BY SId) AS t1
+   SELECT Student.s_name, t1.AvgScore
+   FROM (SELECT s_id, AVG(s_score) AS AvgScore
+         FROM Score
+         GROUP BY s_id) AS t1
    INNER JOIN Student
-   ON Student.SId=t1.SId
+   ON Student.s_id=t1.s_id
    WHERE t1.AvgScore>60;
    
    +--------+----------+
-   | Sname  | score    |
+   | s_name | AvgScore |
    +--------+----------+
-   | 赵雷   | 89.66667 |
-   | 钱电   | 70.00000 |
-   | 孙风   | 80.00000 |
-   | 周梅   | 81.50000 |
-   | 郑竹   | 93.50000 |
+   | 赵雷   |  89.6667 |
+   | 钱电   |  70.0000 |
+   | 孙风   |  80.0000 |
+   | 周梅   |  81.5000 |
+   | 郑竹   |  93.5000 |
    +--------+----------+
    ```
 
@@ -272,43 +270,44 @@ insert into SC values('07' , '03' , 98);
    ```sql
    SELECT DISTINCT Student.*
    FROM Student
-   INNER JOIN SC
-   WHERE Student.SId=SC.SId;
+   INNER JOIN Score
+   WHERE Student.s_id=Score.s_id;
    
-   +------+--------+---------------------+------+
-   | SId  | Sname  | Sage                | Ssex |
-   +------+--------+---------------------+------+
-   | 01   | 赵雷   | 1990-01-01 00:00:00 | 男   |
-   | 02   | 钱电   | 1990-12-21 00:00:00 | 男   |
-   | 03   | 孙风   | 1990-05-20 00:00:00 | 男   |
-   | 04   | 李云   | 1990-08-06 00:00:00 | 男   |
-   | 05   | 周梅   | 1991-12-01 00:00:00 | 女   |
-   | 06   | 吴兰   | 1992-03-01 00:00:00 | 女   |
-   | 07   | 郑竹   | 1989-07-01 00:00:00 | 女   |
-   +------+--------+---------------------+------+
+   +------+--------+------------+-------+
+   | s_id | s_name | s_birth    | s_sex |
+   +------+--------+------------+-------+
+   | 01   | 赵雷   | 1990-01-01 | 男    |
+   | 02   | 钱电   | 1990-12-21 | 男    |
+   | 03   | 孙风   | 1990-05-20 | 男    |
+   | 04   | 李云   | 1990-08-06 | 男    |
+   | 05   | 周梅   | 1991-12-01 | 女    |
+   | 06   | 吴兰   | 1992-03-01 | 女    |
+   | 07   | 郑竹   | 1989-07-01 | 女    |
+   +------+--------+------------+-------+
    ```
 
 4. 查询所有同学的学生编号、学生姓名、选课总数、所有课程的总成绩(没成绩的显示为 null ) 
 
    ```sql
    SELECT Student.*, t1.courseNum, t1.scoreSum
-   FROM (SELECT SId, COUNT(CId) AS courseNum, SUM(score) AS scoreSum
-         FROM SC
-         GROUP BY SId) as t1
-   INNER JOIN Student
-   ON Student.SId=t1.SId;
+   FROM Student
+   LEFT JOIN (SELECT s_id,COUNT(c_id) AS courseNum,SUM(s_score) AS scoreSum
+              FROM Score
+              GROUP BY s_id) as t1
+   ON Student.s_id=t1.s_id;
    
-   +------+--------+---------------------+------+-----------+----------+
-   | SId  | Sname  | Sage                | Ssex | courseNum | scoreSum |
-   +------+--------+---------------------+------+-----------+----------+
-   | 01   | 赵雷   | 1990-01-01 00:00:00 | 男   |         3 |    269.0 |
-   | 02   | 钱电   | 1990-12-21 00:00:00 | 男   |         3 |    210.0 |
-   | 03   | 孙风   | 1990-05-20 00:00:00 | 男   |         3 |    240.0 |
-   | 04   | 李云   | 1990-08-06 00:00:00 | 男   |         3 |    100.0 |
-   | 05   | 周梅   | 1991-12-01 00:00:00 | 女   |         2 |    163.0 |
-   | 06   | 吴兰   | 1992-03-01 00:00:00 | 女   |         2 |     65.0 |
-   | 07   | 郑竹   | 1989-07-01 00:00:00 | 女   |         2 |    187.0 |
-   +------+--------+---------------------+------+-----------+----------+
+   +------+--------+------------+-------+-----------+----------+
+   | s_id | s_name | s_birth    | s_sex | courseNum | scoreSum |
+   +------+--------+------------+-------+-----------+----------+
+   | 01   | 赵雷   | 1990-01-01 | 男    |         3 |      269 |
+   | 02   | 钱电   | 1990-12-21 | 男    |         3 |      210 |
+   | 03   | 孙风   | 1990-05-20 | 男    |         3 |      240 |
+   | 04   | 李云   | 1990-08-06 | 男    |         3 |      100 |
+   | 05   | 周梅   | 1991-12-01 | 女    |         2 |      163 |
+   | 06   | 吴兰   | 1992-03-01 | 女    |         2 |       65 |
+   | 07   | 郑竹   | 1989-07-01 | 女    |         2 |      187 |
+   | 08   | 王菊   | 1990-01-20 | 女    |      NULL |     NULL |
+   +------+--------+------------+-------+-----------+----------+
    ```
 
    4.1 查有成绩的学生信息(查询逻辑与3不同)
@@ -316,19 +315,19 @@ insert into SC values('07' , '03' , 98);
    ```sql
    SELECT *
    FROM Student
-   WHERE EXISTS(SELECT * FROM SC WHERE STUDENT.SId=SC.SId);
+   WHERE EXISTS(SELECT * FROM Score WHERE Student.s_id=Score.s_id);
    
-   +------+--------+---------------------+------+
-   | SId  | Sname  | Sage                | Ssex |
-   +------+--------+---------------------+------+
-   | 01   | 赵雷   | 1990-01-01 00:00:00 | 男   |
-   | 02   | 钱电   | 1990-12-21 00:00:00 | 男   |
-   | 03   | 孙风   | 1990-05-20 00:00:00 | 男   |
-   | 04   | 李云   | 1990-08-06 00:00:00 | 男   |
-   | 05   | 周梅   | 1991-12-01 00:00:00 | 女   |
-   | 06   | 吴兰   | 1992-03-01 00:00:00 | 女   |
-   | 07   | 郑竹   | 1989-07-01 00:00:00 | 女   |
-   +------+--------+---------------------+------+
+   +------+--------+------------+-------+
+   | s_id | s_name | s_birth    | s_sex |
+   +------+--------+------------+-------+
+   | 01   | 赵雷   | 1990-01-01 | 男    |
+   | 02   | 钱电   | 1990-12-21 | 男    |
+   | 03   | 孙风   | 1990-05-20 | 男    |
+   | 04   | 李云   | 1990-08-06 | 男    |
+   | 05   | 周梅   | 1991-12-01 | 女    |
+   | 06   | 吴兰   | 1992-03-01 | 女    |
+   | 07   | 郑竹   | 1989-07-01 | 女    |
+   +------+--------+------------+-------+
    ```
 
 5. 查询「李」姓老师的数量
@@ -336,7 +335,7 @@ insert into SC values('07' , '03' , 98);
    ```sql
    SELECT COUNT(*) AS num
    FROM Teacher
-   WHERE Tname LIKE '李%';
+   WHERE t_name LIKE '李%';
    
    +-----+
    | num |
@@ -349,26 +348,26 @@ insert into SC values('07' , '03' , 98);
 
    ```sql
    SELECT Student.*
-   FROM (SELECT SC.SId
-         FROM SC
-         WHERE SC.CId IN (SELECT CId
-                          FROM Course
-                          INNER JOIN Teacher
-                          ON Course.TId=Teacher.TId
-                          WHERE Teacher.Tname='张三')) AS t1
+   FROM (SELECT Score.s_id
+         FROM Score
+         WHERE Score.c_id IN (SELECT c_id
+                              FROM Course
+                              INNER JOIN Teacher
+                              ON Course.t_id=Teacher.t_id
+                              WHERE Teacher.t_name='张三')) AS t1
    INNER JOIN Student
-   ON Student.SId=t1.SId;
+   ON Student.s_id=t1.s_id;
    
-   +------+--------+---------------------+------+
-   | SId  | Sname  | Sage                | Ssex |
-   +------+--------+---------------------+------+
-   | 01   | 赵雷   | 1990-01-01 00:00:00 | 男   |
-   | 02   | 钱电   | 1990-12-21 00:00:00 | 男   |
-   | 03   | 孙风   | 1990-05-20 00:00:00 | 男   |
-   | 04   | 李云   | 1990-08-06 00:00:00 | 男   |
-   | 05   | 周梅   | 1991-12-01 00:00:00 | 女   |
-   | 07   | 郑竹   | 1989-07-01 00:00:00 | 女   |
-   +------+--------+---------------------+------+
+   +------+--------+------------+-------+
+   | s_id | s_name | s_birth    | s_sex |
+   +------+--------+------------+-------+
+   | 01   | 赵雷   | 1990-01-01 | 男    |
+   | 02   | 钱电   | 1990-12-21 | 男    |
+   | 03   | 孙风   | 1990-05-20 | 男    |
+   | 04   | 李云   | 1990-08-06 | 男    |
+   | 05   | 周梅   | 1991-12-01 | 女    |
+   | 07   | 郑竹   | 1989-07-01 | 女    |
+   +------+--------+------------+-------+
    ```
 
 7. 查询没有学全所有课程的同学的信息
@@ -376,19 +375,19 @@ insert into SC values('07' , '03' , 98);
    ```sql
    SELECT Student.*
    FROM Student
-   INNER JOIN (SELECT SId
-               FROM SC
-               GROUP BY SId
+   INNER JOIN (SELECT s_id
+               FROM Score
+               GROUP BY s_id
                HAVING COUNT(*)<(SELECT COUNT(*) FROM Course)) AS t1
-   ON Student.SId=t1.SId;
+   ON Student.s_id=t1.s_id;
    
-   +------+--------+---------------------+------+
-   | SId  | Sname  | Sage                | Ssex |
-   +------+--------+---------------------+------+
-   | 05   | 周梅   | 1991-12-01 00:00:00 | 女   |
-   | 06   | 吴兰   | 1992-03-01 00:00:00 | 女   |
-   | 07   | 郑竹   | 1989-07-01 00:00:00 | 女   |
-   +------+--------+---------------------+------+
+   +------+--------+------------+-------+
+   | s_id | s_name | s_birth    | s_sex |
+   +------+--------+------------+-------+
+   | 05   | 周梅   | 1991-12-01 | 女    |
+   | 06   | 吴兰   | 1992-03-01 | 女    |
+   | 07   | 郑竹   | 1989-07-01 | 女    |
+   +------+--------+------------+-------+
    ```
 
 8. 查询至少有一门课与学号为" 01 "的同学所学相同的同学的信
@@ -396,21 +395,21 @@ insert into SC values('07' , '03' , 98);
    ```sql
    SELECT DISTINCT Student.*
    FROM Student
-   INNER JOIN SC
-   ON Student.SId=SC.SId
-   WHERE SC.CId IN (SELECT CId FROM SC WHERE SC.SId='01') 
-   AND Student.SId!='01';
+   INNER JOIN Score
+   ON Student.s_id=Score.s_id
+   WHERE Score.c_id IN (SELECT c_id FROM Score WHERE Score.s_id='01') 
+   AND Student.s_id!='01';
    
-   +------+--------+---------------------+------+
-   | SId  | Sname  | Sage                | Ssex |
-   +------+--------+---------------------+------+
-   | 02   | 钱电   | 1990-12-21 00:00:00 | 男   |
-   | 03   | 孙风   | 1990-05-20 00:00:00 | 男   |
-   | 04   | 李云   | 1990-08-06 00:00:00 | 男   |
-   | 05   | 周梅   | 1991-12-01 00:00:00 | 女   |
-   | 06   | 吴兰   | 1992-03-01 00:00:00 | 女   |
-   | 07   | 郑竹   | 1989-07-01 00:00:00 | 女   |
-   +------+--------+---------------------+------+
+   +------+--------+------------+-------+
+   | s_id | s_name | s_birth    | s_sex |
+   +------+--------+------------+-------+
+   | 02   | 钱电   | 1990-12-21 | 男    |
+   | 03   | 孙风   | 1990-05-20 | 男    |
+   | 04   | 李云   | 1990-08-06 | 男    |
+   | 05   | 周梅   | 1991-12-01 | 女    |
+   | 06   | 吴兰   | 1992-03-01 | 女    |
+   | 07   | 郑竹   | 1989-07-01 | 女    |
+   +------+--------+------------+-------+
    ```
 
 9. 查询和" 01 "号的同学学习的课程 完全相同的其他同学的信息
