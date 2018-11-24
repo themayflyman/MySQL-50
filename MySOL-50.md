@@ -1162,7 +1162,7 @@ insert into SC values('07' , '03' , 98);
     | 02   | 钱电   | 1990-12-21 | 男    |
     | 03   | 孙风   | 1990-05-20 | 男    |
     | 04   | 李云   | 1990-08-06 | 男    |
-    +------+--------+------------+-------+sm
+    +------+--------+------------+-------+
     ```
 
 40. 查询各学生的年龄，只按年份来算
@@ -1187,10 +1187,57 @@ insert into SC values('07' , '03' , 98);
 
 41. 按照出生日期来算，当前月日 < 出生年月的月日则，年龄减一
 
+    ```sql
+    SELECT Student.*,
+           (CASE
+            WHEN MONTH(NOW())<MONTH(s_birth)
+            THEN YEAR(NOW())-YEAR(s_birth)-1
+            ELSE YEAR(NOW())-YEAR(s_birth)
+            END) AS age
+    FROM Student;
+    
+    +------+--------+------------+-------+------+
+    | s_id | s_name | s_birth    | s_sex | age  |
+    +------+--------+------------+-------+------+
+    | 01   | 赵雷   | 1990-01-01 | 男    |   28 |
+    | 02   | 钱电   | 1990-12-21 | 男    |   27 |
+    | 03   | 孙风   | 1990-05-20 | 男    |   28 |
+    | 04   | 李云   | 1990-08-06 | 男    |   28 |
+    | 05   | 周梅   | 1991-12-01 | 女    |   26 |
+    | 06   | 吴兰   | 1992-03-01 | 女    |   26 |
+    | 07   | 郑竹   | 1989-07-01 | 女    |   29 |
+    | 08   | 王菊   | 1990-01-20 | 女    |   28 |
+    +------+--------+------------+-------+------+
+    ```
+
 42. 查询本周过生日的学生
+
+    ```sql
+    SELECT Student.*
+    FROM Student
+    WHERE WEEKOFYEAR(s_birth)=WEEKOFYEAR(CURDATE());
+    ```
 
 43. 查询下周过生日的学生
 
-44. 查询本月过生日的学生
+    ```sql
+    SELECT Student.*
+    FROM Student
+    WHERE WEEKOFYEAR(s_birth)=WEEKOFYEAR(CURDATE())+1;
+    ```
+
+44. 过生日查询本月过生日的学生
+
+    ```sql
+    SELECT Student.*
+    FROM Student
+    WHERE MONTH(NOW())=MONTH(s_birth);
+    ```
 
 45. 查询下月过生日的学生
+
+    ```sql
+    SELECT Student.*
+    FROM Student
+    WHERE MONTH(s_birth)-MONTH(NOW())=1;
+    ```
