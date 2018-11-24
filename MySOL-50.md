@@ -25,7 +25,7 @@ Score(s_id,c_id,s_score) –学生编号,课程编号,分数
 CREATE TABLE Student(
     s_id VARCHAR(20),
     s_name VARCHAR(20) NOT NULL DEFAULT '',
-    s_birth VARCHAR(20) NOT NULL DEFAULT '',
+    s_birth DATE,
     s_sex VARCHAR(10) NOT NULL DEFAULT '',
     PRIMARY KEY(s_id)
 );
@@ -536,61 +536,654 @@ insert into SC values('07' , '03' , 98);
 
 14. 查询各科成绩最高分、最低分和平均分： 以如下形式显示：课程 ID，课程 name，最高分，最低分，平均分，及格率，中等率，优良率，优秀率 及格为>=60，中等为：70-80，优良为：80-90，优秀为：>=90 要求输出课程号和选修人数，查询结果按人数降序排列，若人数相同，按课程号升序排列
 
+    ```sql
+    SELECT Course.c_id AS 课程ID,
+           Course.c_name AS 课程名,
+           MAX(Score.s_score) AS 最高分,
+           MIN(Score.s_score) AS 最低分,
+           AVG(Score.s_score) AS 平均分,
+           (SUM(CASE
+                WHEN Score.s_score>=60
+                THEN 1
+                ELSE 0
+                END))/COUNT(Score.s_score) AS 及格率,
+           (SUM(CASE
+                WHEN Score.s_score>=70 AND Score.s_score<80
+                THEN 1
+                ELSE 0
+                END))/COUNT(Score.s_score) AS 中等率,
+           (SUM(CASE
+                WHEN Score.s_score>=80 AND Score.s_score<90
+                THEN 1
+                ELSE 0
+                END))/COUNT(Score.s_score) AS 优良率,
+           (SUM(CASE
+                WHEN Score.s_score>=90
+                THEN 1
+                ELSE 0
+                END))/COUNT(Score.s_score) AS 优秀率,
+           COUNT(Score.s_id) AS 选修人数m
+    FROM Course
+    LEFT JOIN Score
+    ON Course.c_id=Score.c_id
+    GROUP BY Course.c_id
+    ORDER BY Course.c_id ASC,选修人数 DESC;
+    ```
+
 15. 按各科成绩进行排序，并显示排名， Score 重复时保留名次空缺 
+
+    ```sql
+    -- RANK() OVER() on MySQL8.0+
+    SELECT Score.c_id,Score.s_score,@currank:=@currank+1 AS rank
+    FROM Score
+    INNER JOIN (SELECT @currank:=0) AS t
+    ORDER BY Score.s_score DESC;
+    
+    +------+---------+------+
+    | c_id | s_score | rank |
+    +------+---------+------+
+    | 03   |      99 |    1 |
+    | 03   |      98 |    2 |
+    | 02   |      90 |    3 |
+    | 02   |      89 |    4 |
+    | 02   |      87 |    5 |
+    | 03   |      80 |    6 |
+    | 01   |      80 |    7 |
+    | 02   |      80 |    8 |
+    | 03   |      80 |    9 |
+    | 01   |      80 |   10 |
+    | 01   |      76 |   11 |
+    | 01   |      70 |   12 |
+    | 02   |      60 |   13 |
+    | 01   |      50 |   14 |
+    | 03   |      34 |   15 |
+    | 01   |      31 |   16 |
+    | 02   |      30 |   17 |
+    | 03   |      20 |   18 |
+    +------+---------+------+
+    ```
 
     15.1 按各科成绩进行排序，并显示排名， Score 重复时合并名次
 
+    ```sql
+    -- DENSE RANK() OVER() on MySQL 8.0+
+    SELECT Score.c_id,
+           Score.s_score,
+           (CASE
+            WHEN @prevscore=Score.s_score
+            THEN @currank
+            WHEN @prevscore:=Score.s_score
+            THEN @currank:=@currank+1
+            END) AS rank
+    FROM Score
+    INNER JOIN (SELECT @currank:=0,@prevscore:=NULL) AS t
+    ORDER BY Score.s_score DESC;
+    
+    +------+---------+------+
+    | c_id | s_score | rank |
+    +------+---------+------+
+    | 03   |      99 |    1 |
+    | 03   |      98 |    2 |
+    | 02   |      90 |    3 |
+    | 02   |      89 |    4 |
+    | 02   |      87 |    5 |
+    | 03   |      80 |    6 |
+    | 01   |      80 |    6 |
+    | 02   |      80 |    6 |
+    | 03   |      80 |    6 |
+    | 01   |      80 |    6 |
+    | 01   |      76 |    7 |
+    | 01   |      70 |    8 |
+    | 02   |      60 |    9 |
+    | 01   |      50 |   10 |
+    | 03   |      34 |   11 |
+    | 01   |      31 |   12 |
+    | 02   |      30 |   13 |
+    | 03   |      20 |   14 |
+    +------+---------+------+
+    ```
+
 16. 查询学生的总成绩，并进行排名，总分重复时保留名次空缺 
+
+    ```sql
+    -- FIXME: unable to select students without score
+    SELECT Score.s_id,SUM(Score.s_score) AS score_sum,@currank:=@currank+1 AS rank
+    FROM Score
+    INNER JOIN (SELECT @currank:=0) AS t
+    GROUP BY Student.s_id
+    ORDER BY score_sum DESC;
+    
+    +------+-----------+------+
+    | s_id | score_sum | rank |
+    +------+-----------+------+
+    | 01   |       269 |    1 |
+    | 03   |       240 |    3 |
+    | 02   |       210 |    2 |
+    | 07   |       187 |    7 |
+    | 05   |       163 |    5 |
+    | 04   |       100 |    4 |
+    | 06   |        65 |    6 |
+    +------+-----------+------+
+    ```
 
     16.1 查询学生的总成绩，并进行排名，总分重复时不保留名次空缺
 
+    ```sql
+    SELECT t1.*,
+           (CASE
+            WHEN @prevscore=t1.score_sum
+            THEN @currank
+            WHEN @prevscore:=t1.score_sum
+            THEN @currank:=@currank+1
+            END) AS rank
+    FROM (SELECT Score.s_id,SUM(Score.s_score) AS score_sum
+          FROM Score
+          INNER JOIN (SELECT @currank:=0,@prevscore:=NULL) AS t
+          GROUP BY Score.s_id
+          ORDER BY SUM(Score.s_score) DESC) AS t1;
+    
+    +------+-----------+------+
+    | s_id | score_sum | rank |
+    +------+-----------+------+
+    | 01   |       269 |    1 |
+    | 03   |       240 |    2 |
+    | 02   |       210 |    3 |
+    | 07   |       187 |    4 |
+    | 05   |       163 |    5 |
+    | 04   |       100 |    6 |
+    | 06   |        65 |    7 |
+    +------+-----------+------+
+    ```
+
 17. 统计各科成绩各分数段人数：课程编号，课程名称，[100-85]，[85-70]，[70-60]，[60-0] 及所占百分比
+
+    ```sql
+    SELECT Course.c_id,
+           Course.c_name,  
+           t1.*
+    FROM Course
+    LEFT JOIN (SELECT c_id,
+                      CONCAT(SUM(CASE
+                                 WHEN s_score>=85 AND s_score<=100
+                                 THEN 1
+                                 ELSE 0
+                                 END)/COUNT(s_score)*100,'%') AS '[100-85]',
+                      CONCAT(SUM(CASE
+                                 WHEN s_score>=70 AND s_score<85
+                                 THEN 1
+                                 ELSE 0
+                                 END)/COUNT(s_score)*100,'%') AS '(85-70]',
+                      CONCAT(SUM(CASE
+                                 WHEN s_score>=60 AND s_score<70
+                                 THEN 1
+                                 ELSE 0
+                                 END)/COUNT(s_score)*100,'%') AS '(70-60]',
+                      CONCAT(SUM(CASE
+                                 WHEN s_score<=60
+                                 THEN 1
+                                 ELSE 0
+                                 END)/COUNT(s_score)*100,'%') AS '[60-0]'
+               FROM Score
+               GROUP BY c_id) AS t1
+    ON Course.c_id=t1.c_id;
+    
+    +------+--------+------+----------+----------+----------+----------+
+    | c_id | c_name | c_id | [100-85] | (85-70]  | (70-60]  | [60-0]   |
+    +------+--------+------+----------+----------+----------+----------+
+    | 01   | 语文   | 01   | 0.0000%  | 66.6667% | 0.0000%  | 33.3333% |
+    | 02   | 数学   | 02   | 50.0000% | 16.6667% | 16.6667% | 33.3333% |
+    | 03   | 英语   | 03   | 33.3333% | 33.3333% | 0.0000%  | 33.3333% |
+    +------+--------+------+----------+----------+----------+----------+
+    ```
 
 18. 查询各科成绩前三名的记录
 
+    ```sql
+    SELECT *
+    FROM Score
+    WHERE (SELECT COUNT(*)
+           FROM Score as Score1
+           WHERE Score.c_id=Score1.c_id AND Score.s_score<Score1.s_score)<3
+    ORDER BY c_id,s_score DESC;
+    
+    +------+------+---------+
+    | s_id | c_id | s_score |
+    +------+------+---------+
+    | 01   | 01   |      80 |
+    | 03   | 01   |      80 |
+    | 05   | 01   |      76 |
+    | 01   | 02   |      90 |
+    | 07   | 02   |      89 |
+    | 05   | 02   |      87 |
+    | 01   | 03   |      99 |
+    | 07   | 03   |      98 |
+    | 02   | 03   |      80 |
+    | 03   | 03   |      80 |
+    +------+------+---------+
+    ```
+
 19. 查询每门课程被选修的学生数
+
+    ```sql
+    SELECT COUNT(*) AS 选修人数 
+    FROM Score 
+    GROUP BY c_id;
+    
+    +--------------+
+    | 选修人数     |
+    +--------------+
+    |            6 |
+    |            6 |
+    |            6 |
+    +--------------+
+    ```
 
 20. 查询出只选修两门课程的学生学号和姓名
 
+    ```sql
+    SELECT s_id,s_name
+    FROM Student
+    WHERE s_id IN (SELECT s_id
+                   FROM Score
+                   GROUP BY s_id
+                   HAVING COUNT(*)=2);
+     
+    +------+--------+
+    | s_id | s_name |
+    +------+--------+
+    | 05   | 周梅   |
+    | 06   | 吴兰   |
+    | 07   | 郑竹   |
+    +------+--------+
+    ```
+
 21. 查询男生、女生人数
+
+    ```sql
+    SELECT s_sex, COUNT(*) AS number
+    FROM Student
+    GROUP BY s_sex;
+    
+    +-------+--------+
+    | s_sex | number |
+    +-------+--------+
+    | 女    |      4 |
+    | 男    |      4 |
+    +-------+--------+
+    ```
 
 22. 查询名字中含有「风」字的学生信息
 
+    ```	sql
+    SELECT *
+    FROM Student
+    WHERE s_name LIKE '%风%';
+    
+    +------+--------+------------+-------+
+    | s_id | s_name | s_birth    | s_sex |
+    +------+--------+------------+-------+
+    | 03   | 孙风   | 1990-05-20 | 男    |
+    +------+--------+------------+-------+
+    ```
+
 23. 查询同名同性学生名单，并统计同名人数
+
+    ```sql
+    SELECT *
+    FROM Student
+    LEFT JOIN (SELECT s_name,s_sex,COUNT(*) AS 同名人数
+               FROM Student
+               GROUP BY s_name,s_sex) AS t1
+    ON Student.s_name=t1.s_name AND Student.s_sex=t1.s_sex
+    WHERE t1.同名人数>1;
+    ```
 
 24. 查询 1990 年出生的学生名单
 
+    ```sql
+    SELECT *
+    FROM Student
+    WHERE YEAR(s_birth)=1990;
+    
+    +------+--------+------------+-------+
+    | s_id | s_name | s_birth    | s_sex |
+    +------+--------+------------+-------+
+    | 01   | 赵雷   | 1990-01-01 | 男    |
+    | 02   | 钱电   | 1990-12-21 | 男    |
+    | 03   | 孙风   | 1990-05-20 | 男    |
+    | 04   | 李云   | 1990-08-06 | 男    |
+    | 08   | 王菊   | 1990-01-20 | 女    |
+    +------+--------+------------+-------+
+    ```
+
 25. 查询每门课程的平均成绩，结果按平均成绩降序排列，平均成绩相同时，按课程编号升序排列
+
+    ```sql
+    SELECT c_id,AVG(s_score) AS 平均成绩
+    FROM Score
+    GROUP BY c_id
+    ORDER BY 平均成绩 DESC,c_id ASC;
+    
+    +------+--------------+
+    | c_id | 平均成绩     |
+    +------+--------------+
+    | 02   |      72.6667 |
+    | 03   |      68.5000 |
+    | 01   |      64.5000 |
+    +------+--------------+
+    ```
 
 26. 查询平均成绩大于等于 85 的所有学生的学号、姓名和平均成绩
 
+    ```sql
+    SELECT Student.s_id,Student.s_name,t1.平均成绩
+    FROM Student
+    INNER JOIN (SELECT s_id,AVG(Score.s_score) AS 平均成绩
+               FROM Score
+               GROUP BY s_id
+               HAVING 平均成绩>85) AS t1
+    ON Student.s_id=t1.s_id;
+    
+    +------+--------+--------------+
+    | s_id | s_name | 平均成绩     |
+    +------+--------+--------------+
+    | 01   | 赵雷   |      89.6667 |
+    | 07   | 郑竹   |      93.5000 |
+    +------+--------+--------------+
+    ```
+
 27. 查询课程名称为「数学」，且分数低于 60 的学生姓名和分数
+
+    ```sql
+    SELECT Student.s_name,Score.s_score
+    FROM Student
+    LEFT JOIN Score
+    ON Student.s_id=Score.s_id
+    WHERE Score.c_id=(SELECT c_id
+                      FROM Course
+                      WHERE c_name='数学')
+    AND Score.s_score<60;
+    
+    +--------+---------+
+    | s_name | s_score |
+    +--------+---------+
+    | 李云   |      30 |
+    +--------+---------+
+    ```
 
 28. 查询所有学生的课程及分数情况（存在学生没成绩，没选课的情况）
 
+    ```sql
+    SELECT Student.s_id,Score.c_id,Score.s_score
+    FROM Student
+    LEFT JOIN Score
+    ON Student.s_id=Score.s_id;
+    +------+------+---------+
+    | s_id | c_id | s_score |
+    +------+------+---------+
+    | 01   | 01   |      80 |
+    | 01   | 02   |      90 |
+    | 01   | 03   |      99 |
+    | 02   | 01   |      70 |
+    | 02   | 02   |      60 |
+    | 02   | 03   |      80 |
+    | 03   | 01   |      80 |
+    | 03   | 02   |      80 |
+    | 03   | 03   |      80 |
+    | 04   | 01   |      50 |
+    | 04   | 02   |      30 |
+    | 04   | 03   |      20 |
+    | 05   | 01   |      76 |
+    | 05   | 02   |      87 |
+    | 06   | 01   |      31 |
+    | 06   | 03   |      34 |
+    | 07   | 02   |      89 |
+    | 07   | 03   |      98 |
+    | 08   | NULL |    NULL |
+    +------+------+---------+
+    
+    ```
+
 29. 查询任何一门课程成绩在 70 分以上的姓名、课程名称和分数
+
+    ```sql
+    SELECT Student.s_name,Course.c_id,Score.s_score
+    FROM Student
+    LEFT JOIN Score
+    ON Student.s_id=Score.s_id
+    LEFT JOIN Course
+    ON Score.c_id=Course.c_id
+    WHERE Score.s_score>70;
+    
+    +--------+------+---------+
+    | s_name | c_id | s_score |
+    +--------+------+---------+
+    | 赵雷   | 01   |      80 |
+    | 赵雷   | 02   |      90 |
+    | 赵雷   | 03   |      99 |
+    | 钱电   | 03   |      80 |
+    | 孙风   | 01   |      80 |
+    | 孙风   | 02   |      80 |
+    | 孙风   | 03   |      80 |
+    | 周梅   | 01   |      76 |
+    | 周梅   | 02   |      87 |
+    | 郑竹   | 02   |      89 |
+    | 郑竹   | 03   |      98 |
+    +--------+------+---------+
+    ```
 
 30. 查询不及格的课程
 
+    ```sql
+    SELECT Course.c_id,Score.s_id,Score.s_score
+    FROM Score
+    LEFT JOIN Course
+    ON Score.c_id=Course.c_id
+    WHERE Score.s_score<60;
+    
+    +------+------+---------+
+    | c_id | s_id | s_score |
+    +------+------+---------+
+    | 01   | 04   |      50 |
+    | 02   | 04   |      30 |
+    | 03   | 04   |      20 |
+    | 01   | 06   |      31 |
+    | 03   | 06   |      34 |
+    +------+------+---------+
+    ```
+
 31. 查询课程编号为 01 且课程成绩在 80 分以上的学生的学号和姓名
+
+    ```sql
+    SELECT Student.s_id,Student.s_name,Score.s_score
+    FROM Student
+    INNER JOIN Score
+    ON Student.s_id=Score.s_id
+    WHERE Score.c_id='01' AND Score.s_score>80;
+    ```
 
 32. 求每门课程的学生人数
 
+    ```sql
+    SELECT Score.c_id,COUNT(Score.s_id) AS 学生人数
+    FROM Score
+    GROUP BY Score.c_id;
+    
+    +------+--------------+
+    | c_id | 学生人数     |
+    +------+--------------+
+    | 01   |            6 |
+    | 02   |            6 |
+    | 03   |            6 |
+    +------+--------------+
+    ```
+
 33. 成绩不重复，查询选修「张三」老师所授课程的学生中，成绩最高的学生信息及其成绩
+
+    ```sql
+    SELECT Student.*,t1.s_score
+    FROM Student
+    INNER JOIN (SELECT s_id,s_score
+                FROM Score
+                WHERE c_id=(SELECT c_id
+                           FROM Teacher
+                           WHERE Teacher.t_name='张三')
+                ORDER BY s_score DESC
+                LIMIT 1) AS t1
+    ON Student.s_id=t1.s_id;	
+    
+    +------+--------+------------+-------+---------+
+    | s_id | s_name | s_birth    | s_sex | s_score |
+    +------+--------+------------+-------+---------+
+    | 01   | 赵雷   | 1990-01-01 | 男    |      80 |
+    +------+--------+------------+-------+---------+
+    ```
 
 34. 成绩有重复的情况下，查询选修「张三」老师所授课程的学生中，成绩最高的学生信息及其成绩
 
+    ```sql
+    SELECT Student.*,t1.s_score
+    FROM Student
+    INNER JOIN (SELECT s_id,s_score
+                FROM Score
+                WHERE c_id=(SELECT c_id
+                            FROM Teacher
+                            WHERE Teacher.t_name='张三')
+                AND s_score=(SELECT MAX(s_score)
+                             FROM Score
+                             WHERE c_id=(SELECT c_id
+                                         FROM Teacher
+                                         WHERE Teacher.t_name='张三'))) AS t1
+    ON Student.s_id=t1.s_id;	
+    
+    +------+--------+------------+-------+---------+
+    | s_id | s_name | s_birth    | s_sex | s_score |
+    +------+--------+------------+-------+---------+
+    | 01   | 赵雷   | 1990-01-01 | 男    |      99 |
+    +------+--------+------------+-------+---------+
+    ```
+
 35. 查询不同课程成绩相同的学生的学生编号、课程编号、学生成绩
+
+    ```sql
+    SELECT *
+    FROM Score AS t1
+    WHERE EXISTS(SELECT * 
+                 FROM Score AS t2
+                 WHERE t1.s_id=t2.s_id
+                 AND t1.c_id!=t2.c_id
+                 AND t1.s_score=t2.s_score);
+                 
+    +------+------+---------+
+    | s_id | c_id | s_score |
+    +------+------+---------+
+    | 03   | 01   |      80 |
+    | 03   | 02   |      80 |
+    | 03   | 03   |      80 |
+    +------+------+---------+
+    ```
 
 36. 查询每门功成绩最好的前两名
 
+    ```sql
+    SELECT *
+    FROM Score
+    WHERE (SELECT COUNT(*)
+           FROM Score as Score1
+           WHERE Score.c_id=Score1.c_id AND Score.s_score<Score1.s_score)<2
+    ORDER BY c_id,s_score DESC;
+    
+    +------+------+---------+
+    | s_id | c_id | s_score |
+    +------+------+---------+
+    | 01   | 01   |      80 |
+    | 03   | 01   |      80 |
+    | 01   | 02   |      90 |
+    | 07   | 02   |      89 |
+    | 01   | 03   |      99 |
+    | 07   | 03   |      98 |
+    +------+------+---------+
+    ```
+
 37. 统计每门课程的学生选修人数（超过 5 人的课程才统计）。
+
+    ```sql
+    SELECT Score.c_id,COUNT(Score.s_id) AS 学生人数
+    FROM Score
+    GROUP BY Score.c_id
+    HAVING 学生人数>5;
+    
+    +------+--------------+
+    | c_id | 学生人数     |
+    +------+--------------+
+    | 01   |            6 |
+    | 02   |            6 |
+    | 03   |            6 |
+    +------+--------------+
+    ```
 
 38. 检索至少选修两门课程的学生学号
 
+    ```sql
+    SELECT s_id
+    FROM Score
+    GROUP BY s_id
+    HAVING COUNT(c_id)>=2;
+    
+    +------+
+    | s_id |
+    +------+
+    | 01   |
+    | 02   |
+    | 03   |
+    | 04   |
+    | 05   |
+    | 06   |
+    | 07   |
+    +------+
+    ```
+
 39. 查询选修了全部课程的学生信息
 
+    ```sql
+    SELECT *
+    FROM Student
+    WHERE NOT EXISTS(SELECT *
+                     FROM Course
+                     WHERE NOT EXISTS(SELECT *
+                                      FROM Score
+                                      WHERE s_id=Student.s_id
+                                      AND c_id=Course.c_id));
+                                      
+    +------+--------+------------+-------+
+    | s_id | s_name | s_birth    | s_sex |
+    +------+--------+------------+-------+
+    | 01   | 赵雷   | 1990-01-01 | 男    |
+    | 02   | 钱电   | 1990-12-21 | 男    |
+    | 03   | 孙风   | 1990-05-20 | 男    |
+    | 04   | 李云   | 1990-08-06 | 男    |
+    +------+--------+------------+-------+sm
+    ```
+
 40. 查询各学生的年龄，只按年份来算
+
+    ```sql
+    SELECT Student.*,YEAR(NOW())-YEAR(s_birth) AS age
+    FROM Student;
+    
+    +------+--------+------------+-------+------+
+    | s_id | s_name | s_birth    | s_sex | age  |
+    +------+--------+------------+-------+------+
+    | 01   | 赵雷   | 1990-01-01 | 男    |   28 |
+    | 02   | 钱电   | 1990-12-21 | 男    |   28 |
+    | 03   | 孙风   | 1990-05-20 | 男    |   28 |
+    | 04   | 李云   | 1990-08-06 | 男    |   28 |
+    | 05   | 周梅   | 1991-12-01 | 女    |   27 |
+    | 06   | 吴兰   | 1992-03-01 | 女    |   26 |
+    | 07   | 郑竹   | 1989-07-01 | 女    |   29 |
+    | 08   | 王菊   | 1990-01-20 | 女    |   28 |
+    +------+--------+------------+-------+------+
+    ```
 
 41. 按照出生日期来算，当前月日 < 出生年月的月日则，年龄减一
 
